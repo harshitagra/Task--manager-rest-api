@@ -42,8 +42,15 @@ const userSchema = new mongoose.Schema({
             required: true
         }
     }]
+}, {
+    timestamps: true
 })
 
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'author'
+})
 
 userSchema.methods.getauthorToken = async function() {
     const user = this
@@ -52,18 +59,17 @@ userSchema.methods.getauthorToken = async function() {
     await user.save()
     return token
 }
-userSchema.virtual('tasks', {
-    ref: 'Task',
-    localField: '_id',
-    foreignField: 'owner'
-})
+
 userSchema.methods.toJSON = function() {
     const user = this
     const userObject = user.toObject()
+
     delete userObject.password
     delete userObject.tokens
+    
     return userObject
 }
+
 userSchema.statics.findbyCredentials = async (email, password) => {
     const user = await User.findOne({email}) 
     if(!user) {
@@ -84,9 +90,11 @@ userSchema.pre('save', async function(next) {
 
 userSchema.pre('remove', async function(next) {
     const user = this
-    await Task.deleteMany({ owner: user._id })
+    await Task.deleteMany({ author: user._id })
     next()
 })
+
+
 const User = mongoose.model('User', userSchema)
 
 module.exports = User

@@ -9,6 +9,7 @@ const authentication = async (req, res, next) => {
 
         req.token = token
         req.user = user
+        
         next()
     } catch(e) {
         res.status(401).send('Invalid Authentication!')

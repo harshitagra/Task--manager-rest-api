@@ -13,25 +13,44 @@ router.post('/task', auth, async ( req, res) => {
     })
     try {
         await task.save()
-        res.send(task)
+        res.status(201).send(task)
     }catch(e) {
-        res.status(500).send()
+        res.status(400).send()
     }
     
 })
 
 router.get('/task', auth, async (req, res) => {
+    const match = {}
+    const sort = {}
+    if(req.query.completed) {
+        match.completed = req.query.completed === 'true'
+    }
+
+    if(req.query.sortBy) {
+        const parts = req.query.sortBy.split(':')
+        sort[parts[0]] = parts[1] === 'desc'? -1 : 1
+    }
+    
     try {
-        const tasks = await Task.find({author: req.user._id})
-        res.send(tasks)
+        await (req.user).populate({
+            path: 'tasks',
+            match,
+            options: {
+                limit: parseInt(req.query.limit),
+                skip: parseInt(req.query.skip),
+                sort
+            }
+        }).execPopulate()
+        res.send(req.user.tasks)
     }catch(e) {
         res.status(500).send();
     }
 })
 
 router.get('/task/:id', auth, async (req, res) => {
+    const _id = req.params.id
     try {
-        const _id = req.params.id
         const task = await Task.findOne({ _id, author: req.user._id})
         if(!task) return res.status(404).send()
         res.send(task)
@@ -43,7 +62,7 @@ router.get('/task/:id', auth, async (req, res) => {
 
 router.patch('/task/:id' , auth, async (req, res) => {
     const updates = Object.keys(req.body)
-    const allowedU = ['Description','Completed']
+    const allowedU = ['description','completed']
     const isvalid = updates.every((update) => {
         return allowedU.includes(update)
     })

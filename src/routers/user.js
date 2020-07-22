@@ -80,9 +80,8 @@ router.delete('/users/me', auth, async (req,res) => {
         await req.user.remove();
         res.send(req.user)
     } catch(e) {
-        res.status(400).send()
+        res.status(500).send()
     }
 })
-
 
 module.exports = router 
