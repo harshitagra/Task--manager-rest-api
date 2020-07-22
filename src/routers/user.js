@@ -52,18 +52,7 @@ router.get('/users/profile', auth, async (req,res) => {
     res.send(req.user)
 })
 
-router.get('/users/:id', auth, async (req, res) => {
-    const _id = req.params.id 
-    try {
-        const user = await User.findById(_id)
-        if(!user) return res.status(404).send()
-        res.send(user)
-    } catch(e) {
-        res.status(500).send()
-    }
-})
-router.patch('/users/:id', auth, async (req, res) => {
-    const _id = req.params.id
+router.patch('/users/me', auth, async (req, res) => {
     const updates = Object.keys(req.body)
     const allowedU = ['name', 'email', 'password', 'age']
     
@@ -75,35 +64,25 @@ router.patch('/users/:id', auth, async (req, res) => {
     
     try {
         
-        const user = await User.findById(_id)
+        const user = req.user
         updates.forEach(update => {
             user[update] = req.body[update]
         });
         await user.save()
 
-        if(!user) return res.status(404).send()
         res.send(user)
     } catch (e) {
         res.status(400).send()
     }
 })
-router.delete('/users/:id', auth, async (req,res) => {
+router.delete('/users/me', auth, async (req,res) => {
     try {
-        const user = await User.findByIdAndDelete(req.params.id)
-        res.send(user)
+        await req.user.remove();
+        res.send(req.user)
     } catch(e) {
-        res.status(400).send(e)
+        res.status(400).send()
     }
 })
-router.post('/task', auth, async ( req, res) => {
-    const task = new Task(req.body)
-    try {
-        await task.save()
-        res.send(task)
-    }catch(e) {
-        res.status(500).send()
-    }
-    
-})
+
 
 module.exports = router 
